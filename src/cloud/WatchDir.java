@@ -1,5 +1,7 @@
+package cloud;
 /*
- *	@author - Rahul Varanasi 
+ *	@author - Rahul Varanasi
+ *  Taken from Oracle's Watch Service tutorial
  */
 
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
@@ -8,6 +10,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
@@ -21,7 +24,10 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.Map;
 
-public class WatchDir implements Runnable {
+import box.BoxUtils;
+import erasurecoding.ErasureCodingEncoder;
+
+public class WatchDir implements Runnable, ErasureCodingEncoder.IUploadFile {
 
 	private final WatchService watcher;
 	private final Map<WatchKey, Path> keys;
@@ -29,6 +35,7 @@ public class WatchDir implements Runnable {
 	private boolean trace = false;
 
 	private final BoxUtils utils;
+	private WatchDir watch;
 
 	@SuppressWarnings("unchecked")
 	static <T> WatchEvent<T> cast(WatchEvent<?> event) {
@@ -71,6 +78,8 @@ public class WatchDir implements Runnable {
 		this.keys = new HashMap<WatchKey, Path>();
 		this.recursive = recursive;
 		this.utils = utils;
+		
+		watch = this;
 
 		if (recursive) {
 			System.out.format("Scanning %s ...\n", dir);
@@ -86,8 +95,9 @@ public class WatchDir implements Runnable {
 
 	/**
 	 * Process all events for keys queued to the watcher
+	 * @throws IOException 
 	 */
-	void processEvents() {
+	void processEvents() throws IOException {
 		for (;;) {
 
 			// wait for key to be signalled
@@ -117,12 +127,12 @@ public class WatchDir implements Runnable {
 				Path name = ev.context();
 				Path child = dir.resolve(name);
 
-				// print out event
-				System.out.format("%s: %s\n", event.kind().name(), child);
+				// print out event				
 				if (kind == ENTRY_CREATE && child.toFile().isFile()
 						&& child.toFile().exists()) {
-					utils.uploadFile(child);
-				}
+					Utils.printMsgln(kind.name() + ": " + child, false);					
+					new Thread(new ErasureCodingEncoder(child.toFile(), watch)).start();
+				}				
 
 				// if directory is created, and watching recursively, then
 				// register it and its sub-directories
@@ -152,6 +162,15 @@ public class WatchDir implements Runnable {
 
 	@Override
 	public void run() {
-		processEvents();
+		try {
+			processEvents();
+		} catch (IOException e) {			
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public void uploadFile(File file) {
+		utils.uploadFile(file.toPath());		
 	}
 }

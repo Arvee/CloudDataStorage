@@ -1,3 +1,4 @@
+package box;
 /*
  *	@author - Rahul Varanasi 
  */
@@ -8,6 +9,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+
+import cloud.Utils;
 
 import com.box.boxjavalibv2.BoxClient;
 import com.box.boxjavalibv2.dao.BoxFolder;
@@ -81,7 +84,7 @@ public class BoxUtils {
 			}
 
 			if (srcFile.isFile()) {
-				Utils.printMsg("Uploading file. Please wait", false);
+				Utils.printMsg("Uploading " + srcFile.getName() + ". Please wait", false);
 
 				FileExistsResult result = fileExists(srcFile.getName());
 

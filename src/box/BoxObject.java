@@ -1,3 +1,4 @@
+package box;
 /*
  *	@author - Rahul Varanasi 
  */
@@ -8,6 +9,8 @@ import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
+
+import cloud.Utils;
 
 import com.box.boxjavalibv2.BoxClient;
 import com.box.boxjavalibv2.dao.BoxOAuthToken;
@@ -28,8 +31,7 @@ public class BoxObject {
 		super();
 	}
 
-	// Get the instance of the authenticated BoxClient
-	// Singleton design pattern
+	// Get the single instance of the authenticated BoxClient	
 	public static synchronized BoxClient getAuthenticatedBoxClientInstance() {
 		if (globalClient == null) {
 			globalClient = new BoxObject().authenticate();
