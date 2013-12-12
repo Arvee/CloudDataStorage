@@ -10,15 +10,16 @@ PHASE - 1
 
 This application uploads data to Box.com cloud service.
 Implements a Watch service to monitor a watch folder for changes. 
-Any file added to the watch folder will be pushed to the cloud automatically.
-Any file modification in the watch folder will re-upload the file to the cloud.
-It will ignore any folders inside the watch folder.
+Any file created inside the watch folder will be pushed to the cloud.
+Directories and file modifications inside the watch folder are ignored.
+It will ignore any directories or files existing before the start of watch service.
 
 
 PHASE - 2
 =========
 
-TODO
+Implemented privacy preserving BP-XOR Erasure Coding scheme.
+Reorganized the project into better packages.
 
-1. Add more cloud services
-2. Implement BP-XOR coding
+TODO - Connect Dropbox cloud service.
+TODO - Handle larger files. Cache bytes on the storage disk than in the memory.
