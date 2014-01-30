@@ -1,0 +1,145 @@
+import java.awt.Desktop;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.util.Locale;
+
+import com.dropbox.core.DbxAppInfo;
+import com.dropbox.core.DbxAuthFinish;
+import com.dropbox.core.DbxClient;
+import com.dropbox.core.DbxEntry;
+import com.dropbox.core.DbxException;
+import com.dropbox.core.DbxRequestConfig;
+import com.dropbox.core.DbxWebAuthNoRedirect;
+import com.dropbox.core.DbxWriteMode;
+
+public final class CopyOfDropboxObject {
+	private DbxClient client = null;
+	/*
+	 * Generate the APP_KEY and the APP_SECRET KEY to login and grant access to the application.
+	 * 
+	 */
+	private static final String APP_KEY = "APPKEY";
+	private static final String APP_SECRET = "SECRETKEY";
+
+	private static CopyOfDropboxObject dropboxObject = null;
+
+	public static CopyOfDropboxObject getInstance() {
+		if (dropboxObject == null) {
+			dropboxObject = new CopyOfDropboxObject();
+			dropboxObject.authMethod();
+		}
+		return dropboxObject;
+	}
+
+	public CopyOfDropboxObject() {
+		super();
+	}
+
+	private void authMethod() {
+
+		DbxAppInfo appInfo = new DbxAppInfo(APP_KEY, APP_SECRET);
+
+		DbxRequestConfig config = new DbxRequestConfig("JavaTutorial/1.0",
+				Locale.getDefault().toString());
+		DbxWebAuthNoRedirect webAuth = new DbxWebAuthNoRedirect(config, appInfo);
+		String authorizeUrl = webAuth.start();
+
+		Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop()
+				: null;
+		if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
+			try {
+				desktop.browse(URI.create(authorizeUrl));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		String code = "";
+		DbxAuthFinish authFinish = null;
+		System.out.println("Enter the TOKEN..");
+		try {
+			code = new BufferedReader(new InputStreamReader(System.in))
+					.readLine().trim();
+			authFinish = webAuth.finish(code);
+			client = new DbxClient(config, authFinish.accessToken);
+			System.out.println("Linked account: "
+					+ client.getAccountInfo().displayName);
+		} catch (IOException e) {
+			System.err.println("Error:Reading from console..");
+		} catch (DbxException e) {
+			System.err.println("dropbox error..");
+		} catch (Exception e) {
+			System.err.println("unexpected error..");
+		}
+	}
+
+	public void pushUpload(File fileData) {
+
+		if (fileData != null && fileData.isFile() && fileData.canRead()) {
+			String fileName = fileData.getName();
+
+			DbxEntry.File myUploadFile = null;
+			FileInputStream fis = null;
+			try {
+				fis = new FileInputStream(fileData);
+				myUploadFile = client.uploadFile("/store/" + fileName,
+						DbxWriteMode.add(), fileData.length(), fis);
+				System.out.println("Uploaded:" + myUploadFile.toString());
+			} catch (Exception e) {
+				e.printStackTrace();
+			} finally {
+				try {
+					fis.close();
+					System.out.println("File upoaded..!");
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		} else {
+			System.err.println("Invalid file..");
+		}
+	}
+
+	public void pushDownload(File fileData, String path) {
+		if (fileData != null && fileData.isFile() && fileData.canRead()) {
+			String fileName = fileData.getName();
+			FileOutputStream fos = null;
+			try {
+				DbxEntry.File downloadedFile = null;
+				fos = new FileOutputStream(fileData);
+				downloadedFile = client
+						.getFile("/store/" + fileName, null, fos);
+				System.out.println("Metadata: " + downloadedFile.toString());
+			} catch (DbxException e) {
+				System.err.println("Dropbox error..!!");
+			} catch (FileNotFoundException e) {
+				System.err.println("File not found..!!");
+			} catch (IOException e) {
+				System.err.println("IO exception ");
+			} finally {
+				try {
+					fos.close();
+				} catch (IOException e) {
+					System.err.println("Error with output stream.");
+				}
+			}
+
+		}
+	}
+
+	public static void main(String[] args) {
+
+		CopyOfDropboxObject dbx = CopyOfDropboxObject.getInstance();
+		String path = ("/Users/uploadfilepath");// Edit the upload file path to run the application.
+		File file = new File(path);
+		dbx.pushUpload(file);
+	}
+
+}
+
+
